@@ -78,7 +78,7 @@ class MemberTests(TutorialTestMixin, TestCase):
         """
         To test details of a member given.
         """
-        # Test staff user profile without content first
+        # Test staff user profile without activity on forums first
         result = self.client.get(reverse("member-detail", args=[self.staff.username]), follow=False)
         self.assertEqual(result.status_code, 200)
         self.assertNotContains(result, "Derniers sujets créés")  # Checks that no topics are shown
@@ -87,7 +87,7 @@ class MemberTests(TutorialTestMixin, TestCase):
         topic = TopicFactory(forum=self.forum11, author=self.staff)
         PostFactory(topic=topic, author=self.staff, position=1)
 
-        # Test profile with content
+        # Test profile with some activity on forums
         result = self.client.get(reverse("member-detail", args=[self.staff.username]), follow=False)
         self.assertEqual(result.status_code, 200)
         self.assertContains(result, "Derniers sujets créés")  # Checks that topics section is shown
