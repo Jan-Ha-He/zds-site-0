@@ -54,29 +54,22 @@ Les autres verbes ne sont pas supportés.
 Les formats d'entrées/sorties
 -----------------------------
 
-Par défaut, le serveur renvoie les réponses au format ``JSON`` mais il gère aussi le ``XML``. Pour demander au serveur de renvoyer les réponses en ``XML``, il faut utiliser l'en-tête ``Accept`` en spécifiant ``application/xml`` comme valeur (``application/json`` pour recevoir du ``JSON``).
-
-.. sourcecode:: bash
-
-    $ curl -H "Accept: application/xml" https://zestedesavoir.com/api/membres/
-
-Les `formats de sortie (en) <http://www.django-rest-framework.org/api-guide/renderers/>`_ sont renseignés dans le fichier ``settings.py`` sous l'attribut ``DEFAULT_RENDERER_CLASSES`` du dictionnaire ``REST_FRAMEWORK``. Pour Django Rest Framework, tous les formats de sorties sont des ``renderer``.
+Par défaut, le serveur renvoie les réponses au format ``JSON``. Les `formats de sortie (en) <http://www.django-rest-framework.org/api-guide/renderers/>`_ sont renseignés dans le fichier ``settings.py`` sous l'attribut ``DEFAULT_RENDERER_CLASSES`` du dictionnaire ``REST_FRAMEWORK``. Pour Django Rest Framework, tous les formats de sorties sont des ``renderer``.
 
 .. sourcecode:: python
 
     REST_FRAMEWORK = {
         'DEFAULT_RENDERER_CLASSES': (
             'rest_framework.renderers.JSONRenderer',
-            'rest_framework.renderers.XMLRenderer',
             'rest_framework.renderers.BrowsableAPIRenderer',
         ),
     }
 
-Plusieurs formats d'entrées sont supportés par le serveur, à savoir le ``JSON`` (par défaut), l'``XML``, le formulaire et le multi part (``x-www-form-urlencoded``). Ces formats peuvent être renseignées avec l'en-tête ``Content-Type``.
+Plusieurs formats d'entrées sont supportés par le serveur, à savoir le ``JSON`` (par défaut), le formulaire et le multi part (``x-www-form-urlencoded``). Ces formats peuvent être renseignées avec l'en-tête ``Content-Type``.
 
 .. sourcecode:: bash
 
-    $ curl -H "Content-Type: application/xml" https://zestedesavoir.com/api/membres/
+    $ curl -H "Content-Type: application/x-www-form-urlencoded" https://zestedesavoir.com/api/membres/
 
 Les `formats d'entrée (en) <http://www.django-rest-framework.org/api-guide/parsers/>`_ sont renseignés dans le fichier ``settings.py`` sous l'attribut ``DEFAULT_PARSER_CLASSES`` du dictionnaire ``REST_FRAMEWORK``. Pour Django Rest Framework, tous les formats d'entrée sont des ``parser``.
 
@@ -85,7 +78,6 @@ Les `formats d'entrée (en) <http://www.django-rest-framework.org/api-guide/pars
     REST_FRAMEWORK = {
         'DEFAULT_PARSER_CLASSES': (
             'rest_framework.parsers.JSONParser',
-            'rest_framework.parsers.XMLParser',
             'rest_framework.parsers.FormParser',
             'rest_framework.parsers.MultiPartParser',
         ),
