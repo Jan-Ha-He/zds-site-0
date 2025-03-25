@@ -5,21 +5,27 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from zds.forum.tests.factories import TopicFactory, PostFactory, Topic, Post, TagFactory
-from zds.forum.tests.factories import create_category_and_forum, create_topic_in_forum
+from zds.forum.tests.factories import (
+    Post,
+    PostFactory,
+    TagFactory,
+    Topic,
+    TopicFactory,
+    create_category_and_forum,
+    create_topic_in_forum,
+)
 from zds.member.tests.factories import ProfileFactory, StaffProfileFactory
 from zds.search.utils import SearchIndexManager
+from zds.tutorialv2.models.database import FakeChapter, PublishableContent, PublishedContent
+from zds.tutorialv2.tests import TutorialTestMixin, override_for_contents
 from zds.tutorialv2.tests.factories import (
-    PublishableContentFactory,
-    PublishedContentFactory,
     ContainerFactory,
     ExtractFactory,
+    PublishableContentFactory,
+    PublishedContentFactory,
     publish_content,
 )
-from zds.tutorialv2.models.database import PublishedContent, FakeChapter, PublishableContent
-from zds.tutorialv2.tests import TutorialTestMixin, override_for_contents
 from zds.utils.tests.factories import CategoryFactory, SubCategoryFactory
-
 
 overridden_zds_app = deepcopy(settings.ZDS_APP)
 overridden_zds_app["content"]["extra_content_generation_policy"] = "NONE"
@@ -441,7 +447,8 @@ class SearchIndexManagerTests(TutorialTestMixin, TestCase):
         number_of_results = sum(result["found"] for result in results)
         self.assertEqual(number_of_results, 3)
 
-        # Move the private topic to a private forum
+        # Move the topic to a private forum, so it becomes a private topic
+        # (this also tests we can move a topic to a private forum before it was even indexed)
         private_topic.forum = private_forum
         private_topic.save()
         private_topic.refresh_from_db()

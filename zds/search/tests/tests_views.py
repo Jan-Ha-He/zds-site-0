@@ -1,5 +1,5 @@
-from copy import deepcopy
 import datetime
+from copy import deepcopy
 from math import ceil
 
 from django.conf import settings
@@ -9,21 +9,19 @@ from django.test.utils import override_settings
 from django.urls import reverse
 
 from zds import json_handler
-from zds.forum.tests.factories import TopicFactory, PostFactory, Topic, Post, TagFactory
-from zds.forum.tests.factories import create_category_and_forum
+from zds.forum.tests.factories import Post, PostFactory, TagFactory, Topic, TopicFactory, create_category_and_forum
 from zds.member.tests.factories import ProfileFactory, StaffProfileFactory
 from zds.search.utils import SearchIndexManager
+from zds.tutorialv2.models.database import FakeChapter, PublishableContent, PublishedContent
+from zds.tutorialv2.tests import TutorialTestMixin, override_for_contents
 from zds.tutorialv2.tests.factories import (
-    PublishableContentFactory,
     ContainerFactory,
     ExtractFactory,
-    publish_content,
+    PublishableContentFactory,
     PublishedContentFactory,
     SubCategoryFactory,
+    publish_content,
 )
-from zds.tutorialv2.models.database import PublishedContent, FakeChapter, PublishableContent
-from zds.tutorialv2.tests import TutorialTestMixin, override_for_contents
-
 
 overridden_zds_app = deepcopy(settings.ZDS_APP)
 overridden_zds_app["content"]["extra_content_generation_policy"] = "NONE"
@@ -209,6 +207,11 @@ class ViewsTests(TutorialTestMixin, TestCase):
 
         # Check if there is no query parametern there is no error:
         result = self.client.get(reverse("search:query"), follow=False)
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(result.context["object_list"]), 0)
+
+        # Check if the request contains an invalid models field:
+        result = self.client.get(reverse("search:query") + "?q=latex&models=", follow=False)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(result.context["object_list"]), 0)
 
@@ -636,7 +639,7 @@ class ViewsTests(TutorialTestMixin, TestCase):
             == response[3]["document"]["weight"]
         )
 
-        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_article"] = 2.0
+        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_validated"] = 2.0
 
         # Reindex to update the weight
         self._index_everything()
@@ -650,8 +653,8 @@ class ViewsTests(TutorialTestMixin, TestCase):
         self.assertTrue(response[0]["document"]["weight"] > response[1]["document"]["weight"])
         self.assertEqual(response[0]["document"]["id"], str(published_article.pk))  # obvious
 
-        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_article"] = 1.0
-        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_medium_or_big_tutorial"] = 2.0
+        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_validated"] = 1.0
+        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_validated_and_multipage"] = 2.0
 
         # Reindex to update the weight
         self._index_everything()
@@ -665,7 +668,7 @@ class ViewsTests(TutorialTestMixin, TestCase):
         self.assertTrue(response[0]["document"]["weight"] > response[1]["document"]["weight"])
         self.assertEqual(response[0]["document"]["id"], str(published_tuto.pk))  # obvious
 
-        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_medium_or_big_tutorial"] = 1.0
+        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_validated_and_multipage"] = 1.0
         settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_opinion"] = 2.0
         settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_opinion_not_picked"] = 4.0
         # Note: in "real life", unpicked opinion would get a boost < 1.
@@ -689,7 +692,7 @@ class ViewsTests(TutorialTestMixin, TestCase):
 
         settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_opinion"] = 1.0
         settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_opinion_not_picked"] = 1.0
-        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_medium_or_big_tutorial"] = 2.0
+        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_validated_and_multipage"] = 2.0
 
         # Reindex to update the weight
         self._index_everything()
@@ -703,7 +706,7 @@ class ViewsTests(TutorialTestMixin, TestCase):
         self.assertTrue(response[0]["document"]["weight"] > response[1]["document"]["weight"])
         self.assertEqual(response[0]["document"]["id"], str(published_tuto.pk))  # obvious
 
-        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_medium_or_big_tutorial"] = 1.0
+        settings.ZDS_APP["search"]["boosts"]["publishedcontent"]["if_validated_and_multipage"] = 1.0
 
         # Reindex to update the weight
         self._index_everything()
