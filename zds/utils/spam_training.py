@@ -1,26 +1,19 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.svm import LinearSVC
 from pprint import pprint
-import json
-import os
+from zds.member.models import Profile
 
 # Data importation
+_bio = ["Je suis un vrai utilisateur", "Gagner d'Argent"]
+_can_read = [0, 1]
 
-_bio = []
-_can_read = []
+profiles = Profile.objects.all()
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-json_path = os.path.join(current_dir, "spamdata.json")
-
-with open(json_path) as f:
-    _data = json.load(f)
-
-for _elem in _data:
-    if not _elem["biography"]:
+for profile in profiles:
+    if not profile.biography:
         continue
-
-    _bio.append(_elem["biography"])
-    _can_read.append(1 if _elem["can_read"] else 0)
+    _bio.append(profile.biography)
+    _can_read.append(1 if profile.can_read else 0)
 
 _limit = int(round(len(_bio) * 0.8))
 

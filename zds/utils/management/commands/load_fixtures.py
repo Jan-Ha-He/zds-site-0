@@ -35,13 +35,13 @@ from zds.tutorialv2.publication_utils import publish_content
 
 def load_member(cli, size, fake, root, *_):
     """
-    Load members
+    Load members, including a portion as spam profiles.
     """
-    nb_users = size * 10
-    cli.stdout.write(f"Nombres de membres à créer : {nb_users}")
+    nb_users = size * 50
+    spam_ratio = 0.2  # 20% of profiles will be spam
+    cli.stdout.write(f"Nombres de membres à créer : {nb_users} (including {int(nb_users * spam_ratio)} spammers)")
     tps1 = time.time()
     cpt = 1
-    # member in settings
     users_set = [
         "admin",
         settings.ZDS_APP["member"]["external_account"],
@@ -64,6 +64,7 @@ def load_member(cli, size, fake, root, *_):
                 profile.last_ip_address = fake.ipv4()
                 profile.save()
 
+    # Create additional users
     for i in range(0, nb_users):
         while Profile.objects.filter(user__username=f"{root}{cpt}").count() > 0:
             cpt += 1
@@ -73,13 +74,19 @@ def load_member(cli, size, fake, root, *_):
         profile.user.last_name = fake.last_name()
         profile.user.email = fake.free_email()
         profile.user.save()
+
+        # Determine if the profile is spam
+        is_spam = random.random() < spam_ratio
+        profile.can_read = 0 if is_spam else 1
         profile.site = fake.url()
-        profile.biography = fake.text(max_nb_chars=200)
+        profile.biography = "Gagner de l'argent rapidement avec ce lien!" if is_spam else fake.text(max_nb_chars=200)
         profile.last_ip_address = fake.ipv4()
         profile.save()
+
         cpt += 1
         sys.stdout.write(f" User {i + 1}/{nb_users}  \r")
         sys.stdout.flush()
+
     tps2 = time.time()
     cli.stdout.write(f"\nFait en {tps2 - tps1} sec")
 
