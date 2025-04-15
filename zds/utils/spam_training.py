@@ -1,26 +1,26 @@
+from pprint import pprint
+
+import factory
+from factory.fuzzy import FuzzyText
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.svm import LinearSVC
-from pprint import pprint
+
 from zds.member.models import Profile
 
-# Data importation
-_bio = ["Je suis un vrai utilisateur", "Gagner d'Argent"]
-_can_read = [0, 1]
+# Data Samples
+spam_profiles = [f"spam {FuzzyText(prefix='spammy').fuzz()} buy now free !!" for _ in range(50)]
+non_spam_profiles = [f"correct {FuzzyText(prefix='normal').fuzz()} about ..." for _ in range(50)]
 
-profiles = Profile.objects.all()
 
-for profile in profiles:
-    if not profile.biography:
-        continue
-    _bio.append(profile.biography)
-    _can_read.append(1 if profile.can_read else 0)
+_bios = [p for p in spam_profiles + non_spam_profiles]
+_can_read = [0] * len(spam_profiles) + [1] * len(non_spam_profiles)
 
-_limit = int(round(len(_bio) * 0.8))
+_limit = int(round(len(_bios) * 0.8))
 
-bio_train = _bio[:_limit]
+bio_train = _bios[:_limit]
 can_read_train = _can_read[:_limit]
 
-bio_test = _bio[_limit:]
+bio_test = _bios[_limit:]
 can_read_test = _can_read[_limit:]
 
 # Transformation text->number (text preprocessing, tokenizing and filtering of stopwords)

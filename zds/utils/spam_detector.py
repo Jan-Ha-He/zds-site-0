@@ -1,12 +1,15 @@
 import logging
-from datetime import datetime
 import os
+from datetime import datetime
+
 from django.conf import settings
-from .spam_training import count_vect, tfidf_transformer, clf
-from django.utils.translation import gettext_lazy as _
-from zds.utils.models import Alert
-from zds.member.models import Profile
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
+
+from zds.member.models import Profile
+from zds.utils.models import Alert
+
+from .spam_training import clf, count_vect, tfidf_transformer
 
 
 class SpamDetector:
@@ -16,18 +19,6 @@ class SpamDetector:
         self.logger.setLevel(logging.INFO)
 
     def check_profile(self, profile):
-        """
-        Check if a profile is a spammer
-        """
-        spam_count = Profile.objects.filter(can_read=0).count()
-        non_spam_count = Profile.objects.filter(can_read=1).count()
-
-        if spam_count < 5 or non_spam_count < 5:
-            self.logger.info(
-                "Not enough data to perform spam checks (spam: %d, non-spam: %d)", spam_count, non_spam_count
-            )
-            return False
-
         biography = profile.biography
 
         if not biography:
