@@ -4,17 +4,17 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
+from zds.antispam.spam_model_manager import SpamModelManager
 from zds.member.models import Profile
 from zds.utils.models import Alert
 
-from .spam_training import clf, count_vect, tfidf_transformer
-
 
 class SpamDetector:
-
-    def __init__(self):
+    def __init__(self, model_file="spam_filter_model.pkl"):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.ERROR)
+        self.model_manager = SpamModelManager(model_file)
+        self.model_manager.load_model()
 
     def check_profile(self, profile):
         biography = profile.biography
@@ -23,10 +23,9 @@ class SpamDetector:
             self.logger.info("∅  %s has no biography" % profile.user.username)
             return False
 
-        if self.check(biography) == 0:
+        if self.model_manager.predict([biography])[0] == 0:
             self.logger.info("✘  %s's biography looks like spam" % profile.user.username)
             self.send_alert(None, profile.user.username)
-
         else:
             self.logger.info("✔️  %s's biography doesn't look like spam" % profile.user.username)
 
@@ -55,8 +54,3 @@ class SpamDetector:
         except Exception as e:
             self.logger.error(f"Error on creation of spam report for {username}: {str(e)}")
             return False
-
-    def check(self, biography):
-        x_new_counts = count_vect.transform([biography])
-        x_new_tfidf = tfidf_transformer.transform(x_new_counts)
-        return clf.predict(x_new_tfidf)[0]
