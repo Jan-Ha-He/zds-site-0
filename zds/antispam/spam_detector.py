@@ -1,8 +1,6 @@
 import logging
-import os
 from datetime import datetime
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
@@ -16,7 +14,7 @@ class SpamDetector:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
 
     def check_profile(self, profile):
         biography = profile.biography
@@ -33,11 +31,6 @@ class SpamDetector:
             self.logger.info("✔️  %s's biography doesn't look like spam" % profile.user.username)
 
         self.logger.info(f"Profile checked: {profile.user.username}\n" f"Biography: {profile.biography}\n" f"{'='*50}")
-
-    def check(self, biography):
-        X_new_counts = count_vect.transform([biography])
-        X_new_tfidf = tfidf_transformer.transform(X_new_counts)
-        return clf.predict(X_new_tfidf)[0]
 
     def send_alert(self, website, username):
         """
@@ -62,3 +55,8 @@ class SpamDetector:
         except Exception as e:
             self.logger.error(f"Error on creation of spam report for {username}: {str(e)}")
             return False
+
+    def check(self, biography):
+        x_new_counts = count_vect.transform([biography])
+        x_new_tfidf = tfidf_transformer.transform(x_new_counts)
+        return clf.predict(x_new_tfidf)[0]

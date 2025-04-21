@@ -1,16 +1,12 @@
 from pprint import pprint
 
-import factory
 from factory.fuzzy import FuzzyText
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.svm import LinearSVC
 
-from zds.member.models import Profile
-
 # Data Samples
 spam_profiles = [f"spam {FuzzyText(prefix='spammy').fuzz()} buy now free !!" for _ in range(50)]
 non_spam_profiles = [f"correct {FuzzyText(prefix='normal').fuzz()} about ..." for _ in range(50)]
-
 
 _bios = [p for p in spam_profiles + non_spam_profiles]
 _can_read = [0] * len(spam_profiles) + [1] * len(non_spam_profiles)

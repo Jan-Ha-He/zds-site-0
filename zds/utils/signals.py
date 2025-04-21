@@ -1,9 +1,8 @@
-from django.dispatch import Signal
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.apps import apps
 import logging
-import os
+
+from django.apps import apps
+from django.db.models.signals import post_save
+from django.dispatch import Signal, receiver
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +30,10 @@ def check_profile_spam(sender, instance, created, **kwargs):
             return
 
         if not created:
-            from .spam_detector import SpamDetector
+            from zds.antispam.spam_detector import SpamDetector
 
         logger.info(f"Spam check started for {instance.user.username}")
-        from .spam_detector import SpamDetector
+        from zds.antispam.spam_detector import SpamDetector
 
         detector = SpamDetector()
 
