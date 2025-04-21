@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import Signal, receiver
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 # arguments: instance, user, by_email
 ping = Signal()
@@ -19,6 +20,8 @@ def get_profile_model():
 
 @receiver(post_save)
 def check_profile_spam(sender, instance, created, **kwargs):
+    from zds.antispam.spam_detector import SpamDetector
+
     """
     Signal handler to detect spam profiles, triggered upon creation or update of biography.
     """
@@ -29,13 +32,7 @@ def check_profile_spam(sender, instance, created, **kwargs):
             logger.info(f"No bio for {instance.user.username} - skip")
             return
 
-        if not created:
-            from zds.antispam.spam_detector import SpamDetector
-
         logger.info(f"Spam check started for {instance.user.username}")
-        from zds.antispam.spam_detector import SpamDetector
-
-        detector = SpamDetector()
-
+        detector = SpamDetector()  # Uses the refactored SpamDetector
         detector.check_profile(instance)
         logger.info(f"Spam check finished for {instance.user.username}")
