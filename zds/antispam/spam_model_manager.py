@@ -16,6 +16,7 @@ class SpamModelManager:
         self.count_vect = None
         self.tfidf_transformer = None
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.ERROR)
 
     def train(self, bio_train, can_read_train):
         """
@@ -54,7 +55,8 @@ class SpamModelManager:
         Predict whether the given biographies are spam or not.
         """
         if not self.clf or not self.count_vect or not self.tfidf_transformer:
-            raise ValueError("Model is not loaded or trained.")
+            self.logger.error("Model not loaded.")
+            self.retrain()
         X_new_counts = self.count_vect.transform(biographies)
         X_new_tfidf = self.tfidf_transformer.transform(X_new_counts)
         return self.clf.predict(X_new_tfidf)
