@@ -37,9 +37,9 @@ def load_member(cli, size, fake, root, *_):
     """
     Load members, including a portion as spam profiles.
     """
-    nb_users = size * 50
+    nb_users = size * 20
     spam_ratio = 0.2  # 20% of profiles will be spam
-    cli.stdout.write(f"Nombres de membres à créer : {nb_users} (including {int(nb_users * spam_ratio)} spammers)")
+    cli.stdout.write(f"Nombres de membres à créer : {nb_users} (dont {int(nb_users * spam_ratio)} spammeurs)")
     tps1 = time.time()
     cpt = 1
     users_set = [

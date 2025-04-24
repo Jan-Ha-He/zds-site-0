@@ -5,7 +5,6 @@ from django.db.models.signals import post_save
 from django.dispatch import Signal, receiver
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 
 # arguments: instance, user, by_email
 ping = Signal()
@@ -33,6 +32,6 @@ def check_profile_spam(sender, instance, created, **kwargs):
             return
 
         logger.info(f"Spam check started for {instance.user.username}")
-        detector = SpamDetector()  # Uses the refactored SpamDetector
+        detector = SpamDetector()
         detector.check_profile(instance)
         logger.info(f"Spam check finished for {instance.user.username}")
