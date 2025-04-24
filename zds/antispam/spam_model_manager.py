@@ -16,7 +16,6 @@ class SpamModelManager:
         self.count_vect = None
         self.tfidf_transformer = None
         self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.ERROR)
 
     def train(self, bio_train, can_read_train):
         """
