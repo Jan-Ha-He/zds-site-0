@@ -86,3 +86,14 @@ class SpamModelManager:
             self.logger.info(f"Model loaded from {self.model_file}")
         else:
             self.logger.info(f"Model file '{self.model_file}' does not exist. Skipping loading step.")
+
+    def predict(self, biographies):
+        """
+        Predict whether the given biographies are spam or not.
+        """
+        if not self.clf or not self.count_vect or not self.tfidf_transformer:
+            self.logger.error("Model not loaded.")
+            self.retrain()
+        X_new_counts = self.count_vect.transform(biographies)
+        X_new_tfidf = self.tfidf_transformer.transform(X_new_counts)
+        return self.clf.predict(X_new_tfidf)
