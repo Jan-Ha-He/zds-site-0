@@ -76,3 +76,13 @@ class SpamModelManager:
         # Save the model
         joblib.dump((self.clf, self.count_vect, self.tfidf_transformer), self.model_file)
         self.logger.info(f"Model saved to {self.model_file}")
+
+    def load_model(self):
+        """
+        Load the model from a file if it exists.
+        """
+        if os.path.exists(self.model_file):
+            self.clf, self.count_vect, self.tfidf_transformer = joblib.load(self.model_file)
+            self.logger.info(f"Model loaded from {self.model_file}")
+        else:
+            self.logger.info(f"Model file '{self.model_file}' does not exist. Skipping loading step.")
