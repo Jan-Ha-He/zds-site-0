@@ -93,7 +93,7 @@ class SpamModelManager:
         """
         if not self.clf or not self.count_vect or not self.tfidf_transformer:
             self.logger.error("Model not loaded.")
-            self.retrain()
+            self.train()
         X_new_counts = self.count_vect.transform(biographies)
         X_new_tfidf = self.tfidf_transformer.transform(X_new_counts)
         return self.clf.predict(X_new_tfidf)
