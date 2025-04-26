@@ -9,5 +9,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Starting retraining of the spam filter model...")
         model_manager = SpamModelManager()
-        model_manager.retrain()
+        model_manager.train()
         self.stdout.write("Retraining completed successfully.")

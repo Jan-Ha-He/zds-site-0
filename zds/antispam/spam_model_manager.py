@@ -24,49 +24,6 @@ class SpamModelManager:
             os.makedirs(directory)
             self.logger.info(f"Created directory: {directory}")
 
-    def train(self, bio_train, can_read_train):
-        """
-        Train the spam filter model with the given data.
-        """
-        self.logger.info("Training the spam filter model...")
-        self.count_vect = CountVectorizer()
-        X_train_counts = self.count_vect.fit_transform(bio_train)
-
-        self.tfidf_transformer = TfidfTransformer()
-        X_train_tfidf = self.tfidf_transformer.fit_transform(X_train_counts)
-
-        self.clf = LinearSVC(max_iter=5000, loss="hinge", dual="auto")
-        self.clf.fit(X_train_tfidf, can_read_train)
-        self.logger.info("Training completed.")
-
-    def save_model(self):
-        """
-        Save the trained model to a file.
-        """
-        joblib.dump((self.clf, self.count_vect, self.tfidf_transformer), self.model_file)
-        self.logger.info(f"Model saved to {self.model_file}")
-
-    def load_model(self):
-        """
-        Load the model from a file if it exists.
-        """
-        if os.path.exists(self.model_file):
-            self.clf, self.count_vect, self.tfidf_transformer = joblib.load(self.model_file)
-            self.logger.info(f"Model loaded from {self.model_file}")
-        else:
-            self.logger.info(f"Model file '{self.model_file}' does not exist. Skipping loading step.")
-
-    def predict(self, biographies):
-        """
-        Predict whether the given biographies are spam or not.
-        """
-        if not self.clf or not self.count_vect or not self.tfidf_transformer:
-            self.logger.error("Model not loaded.")
-            self.retrain()
-        X_new_counts = self.count_vect.transform(biographies)
-        X_new_tfidf = self.tfidf_transformer.transform(X_new_counts)
-        return self.clf.predict(X_new_tfidf)
-
     def prepare_training_data(self):
         """
         Prepare training data from existing profiles or generate fake data if insufficient.
@@ -92,12 +49,30 @@ class SpamModelManager:
 
         return bios, can_read
 
-    def retrain(self):
+    def train(self):
         """
-        Retrain the spam filter model with new data.
+        Prepare data, train the spam filter model, and save it to a file.
         """
-        self.logger.info("Retraining the spam filter model...")
+        self.logger.info("Starting training of the spam filter model...")
+
+        # Ensure the directory exists
+        self.ensure_directory_exists()
+
+        # Prepare training data
         bio_train, can_read_train = self.prepare_training_data()
-        self.train(bio_train, can_read_train)
-        self.save_model()
-        self.logger.info("Retraining completed.")
+
+        # Train the model
+        self.count_vect = CountVectorizer()
+        X_train_counts = self.count_vect.fit_transform(bio_train)
+
+        self.tfidf_transformer = TfidfTransformer()
+        X_train_tfidf = self.tfidf_transformer.fit_transform(X_train_counts)
+
+        self.clf = LinearSVC(max_iter=5000, loss="hinge", dual="auto")
+        self.clf.fit(X_train_tfidf, can_read_train)
+
+        self.logger.info("Training completed.")
+
+        # Save the model
+        joblib.dump((self.clf, self.count_vect, self.tfidf_transformer), self.model_file)
+        self.logger.info(f"Model saved to {self.model_file}")
