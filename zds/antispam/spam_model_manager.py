@@ -2,6 +2,7 @@ import logging
 import os
 
 import joblib
+from django.conf import settings
 from factory.fuzzy import FuzzyText
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.svm import LinearSVC
@@ -10,12 +11,18 @@ from zds.member.models import Profile
 
 
 class SpamModelManager:
-    def __init__(self, model_file="spam_filter_model.pkl"):
-        self.model_file = model_file
+    def __init__(self, model_file=None):
+        self.model_file = model_file or os.path.join(settings.ANTISPAM_PATH, settings.ANTISPAM_MODEL_FILE)
         self.clf = None
         self.count_vect = None
         self.tfidf_transformer = None
         self.logger = logging.getLogger(__name__)
+
+    def ensure_directory_exists(self):
+        directory = os.path.dirname(self.model_file)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            self.logger.info(f"Created directory: {directory}")
 
     def train(self, bio_train, can_read_train):
         """
