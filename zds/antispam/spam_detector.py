@@ -12,7 +12,7 @@ from zds.utils.models import Alert
 class SpamDetector:
     def __init__(self, model_file="spam_filter_model.pkl"):
         self.logger = logging.getLogger(__name__)
-        self.model_manager = SpamModelManager(model_file)
+        self.model_manager = SpamModelManager()
         self.model_manager.load_model()
 
     def check_profile(self, profile):
