@@ -137,6 +137,7 @@ ZDS_APP = {
         "bot_account": zds_config.get("member_bot_username", "bot"),
         "anonymous_account": zds_config.get("member_anonymous_username", "anonymous"),
         "external_account": zds_config.get("member_external_username", "external"),
+        "antispam_account": zds_config.get("member_antispam_username", "antispam"),
         "bot_group": "bot",
         "dev_group": "devs",
         "members_per_page": 100,

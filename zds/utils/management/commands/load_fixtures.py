@@ -16,7 +16,7 @@ from faker import Factory
 from zds.forum.models import Forum, ForumCategory, Topic
 from zds.forum.tests.factories import ForumCategoryFactory, ForumFactory, PostFactory, TopicFactory
 from zds.gallery.tests.factories import GalleryFactory, ImageFactory, UserGalleryFactory
-from zds.member.models import Profile
+from zds.member.models import Ban, Profile
 from zds.member.tests.factories import ProfileFactory, StaffProfileFactory
 from zds.tutorialv2.models.database import PublishableContent
 from zds.tutorialv2.publication_utils import publish_content
@@ -46,6 +46,7 @@ def load_member(cli, size, fake, root, *_):
         "admin",
         settings.ZDS_APP["member"]["external_account"],
         settings.ZDS_APP["member"]["anonymous_account"],
+        settings.ZDS_APP["member"]["antispam_account"],
     ]
     for default_user in users_set:
         current_user = Profile.objects.filter(user__username=default_user).first()
@@ -82,6 +83,13 @@ def load_member(cli, size, fake, root, *_):
         profile.biography = "Gagner de l'argent rapidement avec ce lien!" if is_spam else fake.text(max_nb_chars=200)
         profile.last_ip_address = fake.ipv4()
         profile.save()
+
+        if is_spam:
+            Ban.objects.create(
+                user=profile.user,
+                note="Spam detected",
+                pubdate=datetime.now(),
+            )
 
         cpt += 1
         sys.stdout.write(f" User {i + 1}/{nb_users}  \r")

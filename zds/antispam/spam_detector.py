@@ -39,7 +39,7 @@ class SpamDetector:
         message = _("Spam potentiel")
 
         Alert.objects.create(
-            author=User.objects.get(username="bot"),
+            author=User.objects.get(username="antispam"),
             profile=profile,
             scope="PROFILE",
             text=message,
