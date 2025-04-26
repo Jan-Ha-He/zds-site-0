@@ -12,7 +12,7 @@ LOGOUT_REDIRECT_URL = "homepage"
 GEOIP_PATH = str(BASE_DIR / "geodata")
 GEOIP_CITY = "GeoLite2-City.mmdb"
 
-ANTISPAM_PATH = BASE_DIR / "antispam-data"
+ANTISPAM_PATH = str(BASE_DIR / "antispam-data")
 ANTISPAM_MODEL_FILE = "spam_filter_model.pkl"
 
 SEARCH_ENABLED = True

@@ -11,8 +11,14 @@ from zds.member.models import Profile
 
 
 class SpamModelManager:
-    def __init__(self, model_file=None):
-        self.model_file = model_file or os.path.join(settings.ANTISPAM_PATH, settings.ANTISPAM_MODEL_FILE)
+    def __init__(self):
+        antispam_path = getattr(settings, "ANTISPAM_PATH", None)
+        antispam_model_file = getattr(settings, "ANTISPAM_MODEL_FILE", None)
+
+        if not antispam_path or not antispam_model_file:
+            raise ValueError("ANTISPAM_PATH and ANTISPAM_MODEL_FILE must be defined in settings.")
+
+        self.model_file = os.path.join(antispam_path, antispam_model_file)
         self.clf = None
         self.count_vect = None
         self.tfidf_transformer = None
@@ -20,6 +26,8 @@ class SpamModelManager:
 
     def ensure_directory_exists(self):
         directory = os.path.dirname(self.model_file)
+        if not directory:
+            raise ValueError("The directory for the model file is not defined.")
         if not os.path.exists(directory):
             os.makedirs(directory)
             self.logger.info(f"Created directory: {directory}")
