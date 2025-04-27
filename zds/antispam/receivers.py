@@ -1,4 +1,3 @@
-# zds/antispam/receivers.py
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -16,5 +15,6 @@ def analyze_record(sender, instance, **kwargs):
             field_value = getattr(instance, field_config["field"], None)
             if field_value:
                 detector = SpamDetector()
-                if detector.check_text(field_value):
+                # Pass the content_type (scope) to check_text
+                if detector.check_text(field_value, field_config["scope"]):
                     detector.send_alert(instance, field_config["field"])
