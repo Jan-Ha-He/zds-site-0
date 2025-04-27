@@ -6,28 +6,31 @@ from django.utils.translation import gettext_lazy as _
 
 from zds.antispam.spam_fields import spam_fields
 from zds.antispam.spam_model_manager import SpamModelManager
-from zds.member.models import Profile
 from zds.utils.models import Alert
 
 
 class SpamDetector:
-    def __init__(self, model_file="spam_filter_model.pkl"):
+    def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.model_manager = SpamModelManager()
-        self.model_manager.load_model()
 
-    def check_text(self, text):
+    def check_text(self, text, content_type):
         """
-        Check if a given text is spam.
+        Check if a given text is spam for the specified content type.
         """
         if not text:
             return False
 
-        if self.model_manager.predict([text])[0] == 0:
-            self.logger.info(f"✘ Text looks like spam: {text[:30]}...")
-            return True
-        else:
-            self.logger.info(f"✔️ Text doesn't look like spam.")
+        try:
+            prediction = self.model_manager.predict(content_type, [text])[0]
+            if prediction == 0:  # 0 indicates spam
+                self.logger.info(f"✘ Text looks like spam: {text[:30]}...")
+                return True
+            else:
+                self.logger.info(f"✔️ Text doesn't look like spam.")
+                return False
+        except Exception as e:
+            self.logger.error(f"Error during spam detection: {e}")
             return False
 
     def send_alert(self, instance, field_name):
@@ -52,7 +55,7 @@ class SpamDetector:
             scope = field_config["scope"]
             instance_info = field_config["get_instance_info"](instance)
 
-            # Determine the appropriate alert fields
+            # Map scope to the correct Alert model field
             alert_kwargs = {
                 "author": User.objects.get(username="antispam"),
                 "scope": scope,
@@ -65,6 +68,9 @@ class SpamDetector:
                 alert_kwargs["comment"] = instance
             elif scope == "CONTENT":
                 alert_kwargs["content"] = instance
+            else:
+                self.logger.error(f"Unsupported scope '{scope}' for alert creation.")
+                return
 
             # Create the alert
             Alert.objects.create(**alert_kwargs)
