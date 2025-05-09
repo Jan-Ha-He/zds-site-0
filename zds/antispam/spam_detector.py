@@ -61,21 +61,23 @@ class SpamDetector:
             instance_info = field_config["get_instance_info"](instance)
 
             # Map scope to the correct Alert model field
+            scope_to_alert_kwargs = {
+                "PROFILE": "profile",
+                "FORUM": "comment",
+                "CONTENT": "content",
+            }
+
+            if scope not in scope_to_alert_kwargs:
+                self.logger.error(f"Unsupported scope '{scope}' for alert creation.")
+                return
+
             alert_kwargs = {
                 "author": User.objects.get(username="antispam"),
                 "scope": scope,
-                "text": _(f"Spam potentiel détecté dans {instance_info}, champ '{field_name}'."),
+                "text": _(f"Potential spam detected in {instance_info}, field '{field_name}'."),
                 "pubdate": datetime.now(),
+                scope_to_alert_kwargs[scope]: instance,
             }
-            if scope == "PROFILE":
-                alert_kwargs["profile"] = instance
-            elif scope == "FORUM":
-                alert_kwargs["comment"] = instance
-            elif scope == "CONTENT":
-                alert_kwargs["content"] = instance
-            else:
-                self.logger.error(f"Unsupported scope '{scope}' for alert creation.")
-                return
 
             # Create the alert
             Alert.objects.create(**alert_kwargs)
