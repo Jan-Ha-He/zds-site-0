@@ -3,15 +3,15 @@ from zds.member.models import Profile
 
 spam_fields = [
     {
-        "model": Profile,
-        "field": "biography",
         "scope": "PROFILE",
-        "get_instance_info": lambda instance: f"Profile of user '{instance.user.username}'",
+        "model": Profile,
+        "fields": ["biography", "sign"],
+        "get_instance_info": str,
     },
     {
-        "model": Comment,
-        "field": "text",
         "scope": "FORUM",
-        "get_instance_info": lambda instance: f"Comment by '{instance.author.username}'",
+        "model": Comment,
+        "fields": ["text"],
+        "get_instance_info": lambda instance: str(instance.author.username),
     },
 ]

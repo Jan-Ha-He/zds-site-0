@@ -30,8 +30,8 @@ class SpamModelManager:
     def prepare_training_data(self, content_type):
         """
         Prepare training data for the given content type by loading data from the database.
+        Dynamically adapts to the configuration in spam_fields.
         """
-        # Find the spam field configuration for the given content type
         field_configs = [config for config in spam_fields if config["scope"] == content_type]
         if not field_configs:
             self.logger.error(f"No spam field configuration found for content type: {content_type}")
@@ -42,28 +42,26 @@ class SpamModelManager:
 
         for config in field_configs:
             model = config["model"]
-            field_name = config["field"]
-            spam_indicator = config.get("spam_indicator")
+            fields = config["fields"]
 
             # Query the database for all instances of the model
             instances = model.objects.all()
 
             for instance in instances:
-                field_value = getattr(instance, field_name, None)
-                if field_value:
-                    # Append the field value to the data
-                    data.append(field_value)
+                for field_name in fields:
+                    field_value = getattr(instance, field_name, None)
+                    if field_value:
+                        data.append(field_value)
+                        # Use the is_spam method to determine the label
+                        labels.append(0 if instance.is_spam(field_name) else 1)
 
-                    # Determine the label based on the spam_indicator field
-                    if spam_indicator:
-                        is_spam = getattr(instance, spam_indicator, False)
-                        labels.append(0 if is_spam else 1)  # 0 for spam, 1 for non-spam
-                    else:
-                        labels.append(1)  # Default to non-spam if no spam_indicator is provided
-
-        # there are no 1s or no 0s in the labels use synthetic data
+        # if there are no 1s or no 0s in the labels use synthetic data, this is only used in the creation of the test-db
         if 0 not in labels or 1 not in labels:
-            self.logger.warning(f"Data for {content_type} is unbalanced or empty. Using synthetic data for training.")
+            self.logger.warning(
+                f"Data for {content_type} is unbalanced or empty. Using synthetic data for training. \n"
+                f"Data: {data} \n"
+                f"Labels: {labels}"
+            )
             data = [
                 "Spam: Buy cheap products now!",
                 "Spam: Click here for free money!",

@@ -19,18 +19,23 @@ class SpamDetector:
         Check if a given text is spam for the specified content type.
         """
         if not text:
+            self.logger.warning(f"Skipped spam check: Empty text for content type '{content_type}'.")
             return False
 
         try:
             prediction = self.model_manager.predict(content_type, [text])[0]
             if prediction == 0:  # 0 indicates spam
-                self.logger.info(f"✘ Text looks like spam: {text[:30]}...")
+                self.logger.info(
+                    f"✘ Spam detected for content type '{content_type}'. Text: '{text[:30]}...' (Length: {len(text)})"
+                )
                 return True
             else:
-                self.logger.info(f"✔️ Text doesn't look like spam.")
+                self.logger.info(
+                    f"✔️ No spam detected for content type '{content_type}'. Text: '{text[:30]}...' (Length: {len(text)})"
+                )
                 return False
         except Exception as e:
-            self.logger.error(f"Error during spam detection: {e}")
+            self.logger.error(f"Error during spam detection for content type '{content_type}': {e}")
             return False
 
     def send_alert(self, instance, field_name):
@@ -43,7 +48,7 @@ class SpamDetector:
                 (
                     config
                     for config in spam_fields
-                    if isinstance(instance, config["model"]) and config["field"] == field_name
+                    if isinstance(instance, config["model"]) and field_name in config["fields"]
                 ),
                 None,
             )
@@ -59,7 +64,7 @@ class SpamDetector:
             alert_kwargs = {
                 "author": User.objects.get(username="antispam"),
                 "scope": scope,
-                "text": _(f"Potential spam detected in {instance_info}, field '{field_name}'."),
+                "text": _(f"Spam potentiel détecté dans {instance_info}, champ '{field_name}'."),
                 "pubdate": datetime.now(),
             }
             if scope == "PROFILE":
