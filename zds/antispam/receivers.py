@@ -12,9 +12,9 @@ def analyze_record(sender, instance, **kwargs):
     """
     for field_config in spam_fields:
         if isinstance(instance, field_config["model"]):
-            field_value = getattr(instance, field_config["field"], None)
-            if field_value:
-                detector = SpamDetector()
-                # Pass the content_type (scope) to check_text
-                if detector.check_text(field_value, field_config["scope"]):
-                    detector.send_alert(instance, field_config["field"])
+            detector = SpamDetector()
+            for field in field_config["fields"]:
+                field_value = getattr(instance, field, None)
+                if field_value and detector.check_text(field_value, field_config["scope"]):
+                    detector.send_alert(instance, field)
+            break
