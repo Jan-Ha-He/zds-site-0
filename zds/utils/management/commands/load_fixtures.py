@@ -80,7 +80,7 @@ def load_member(cli, size, fake, root, *_):
         is_spam = random.random() < spam_ratio
         profile.can_read = 0 if is_spam else 1
         profile.site = fake.url()
-        profile.biography = "Gagner de l'argent rapidement avec ce lien!" if is_spam else fake.text(max_nb_chars=200)
+        profile.biography = "Spam: " + fake.text(max_nb_chars=100) if is_spam else fake.text(max_nb_chars=200)
         profile.last_ip_address = fake.ipv4()
         profile.save()
 
@@ -279,7 +279,7 @@ def add_generated_tags_to_topic(nb_rand_tags, nb_tags, topic):
 
 def load_posts(cli, size, fake, *_, **__):
     """
-    Load posts
+    Load posts, including spam posts with a "Spam:" prefix.
     """
     nb_avg_posts_in_topic = size * 20
     cli.stdout.write(f"Nombres de messages à poster en moyenne dans un sujet : {nb_avg_posts_in_topic}")
@@ -297,7 +297,25 @@ def load_posts(cli, size, fake, *_, **__):
             "Il n'y a aucun membre actuellement. " "Vous devez rajouter les membres dans vos fixtures (member)"
         )
         return
-    __generate_topic_and_post(cli, fake, nb_avg_posts_in_topic, nb_topics, nb_users, topics, tps1)
+
+    profiles = list(Profile.objects.all())
+    for topic_index in range(0, nb_topics):
+        nb_posts = randint(0, nb_avg_posts_in_topic * 2) + 1
+        for post_index in range(1, nb_posts):
+            post = PostFactory(
+                topic=topics[topic_index], author=profiles[post_index % nb_users].user, position=post_index + 1
+            )
+            if post_index % 10 == 0:
+                post.text = f"Spam: {fake.paragraph(nb_sentences=5, variable_nb_sentences=True)}"
+            else:
+                post.text = fake.paragraph(nb_sentences=5, variable_nb_sentences=True)
+            post.text_html = emarkdown(post.text)
+            post.is_useful = int(nb_posts * 0.3) > 0 and post_index % int(nb_posts * 0.3) == 0
+            post.save()
+            sys.stdout.write(f" Topic {topic_index + 1}/{nb_topics}  \tPost {post_index + 1}/{nb_posts}  \r")
+            sys.stdout.flush()
+    tps2 = time.time()
+    cli.stdout.write(f"\nFait en {tps2 - tps1} sec")
 
 
 def __generate_topic_and_post(cli, fake, nb_avg_posts_in_topic, nb_topics, nb_users, topics, tps1):

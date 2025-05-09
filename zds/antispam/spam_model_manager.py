@@ -6,6 +6,8 @@ from django.conf import settings
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.svm import LinearSVC
 
+from zds.antispam.spam_fields import spam_fields
+
 
 class SpamModelManager:
     def __init__(self):
@@ -27,12 +29,63 @@ class SpamModelManager:
 
     def prepare_training_data(self, content_type):
         """
-        Prepare training data for the given content type.
+        Prepare training data for the given content type by loading data from the database.
         """
-        # Implement logic to fetch or generate training data based on content_type
-        bios = ["example spam text", "example non-spam text"]
-        labels = [0, 1]  # 0 for spam, 1 for non-spam
-        return bios, labels
+        # Find the spam field configuration for the given content type
+        field_configs = [config for config in spam_fields if config["scope"] == content_type]
+        if not field_configs:
+            self.logger.error(f"No spam field configuration found for content type: {content_type}")
+            return [], []
+
+        data = []
+        labels = []
+
+        for config in field_configs:
+            model = config["model"]
+            field_name = config["field"]
+            spam_indicator = config.get("spam_indicator")
+
+            # Query the database for all instances of the model
+            instances = model.objects.all()
+
+            for instance in instances:
+                field_value = getattr(instance, field_name, None)
+                if field_value:
+                    # Append the field value to the data
+                    data.append(field_value)
+
+                    # Determine the label based on the spam_indicator field
+                    if spam_indicator:
+                        is_spam = getattr(instance, spam_indicator, False)
+                        labels.append(0 if is_spam else 1)  # 0 for spam, 1 for non-spam
+                    else:
+                        labels.append(1)  # Default to non-spam if no spam_indicator is provided
+
+        # there are no 1s or no 0s in the labels use synthetic data
+        if 0 not in labels or 1 not in labels:
+            self.logger.warning(f"Data for {content_type} is unbalanced or empty. Using synthetic data for training.")
+            data = [
+                "Spam: Buy cheap products now!",
+                "Spam: Click here for free money!",
+                "Spam: Limited time offer!",
+                "Spam: Win a lottery!",
+                "Spam: Free gift card!",
+                "Spam: Earn money from home!",
+                "This is a legitimate message.",
+                "Another non-spam message.",
+                "Just a friendly reminder.",
+                "This is not spam.",
+                "Important update regarding your account.",
+                "Meeting agenda for tomorrow.",
+                "Project deadline approaching.",
+            ]
+            labels = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]  # 0 for spam, 1 for non-spam
+
+        # Log the training data and labels
+        self.logger.debug(f"Training data for {content_type}: {data}")
+        self.logger.debug(f"Training labels for {content_type}: {labels}")
+
+        return data, labels
 
     def train(self, content_type):
         """
@@ -45,6 +98,10 @@ class SpamModelManager:
 
         # Prepare training data
         data, labels = self.prepare_training_data(content_type)
+
+        # Log the data being used for training
+        self.logger.info(f"Training data for {content_type}: {data}")
+        self.logger.info(f"Training labels for {content_type}: {labels}")
 
         # Train the model
         count_vect = CountVectorizer()
