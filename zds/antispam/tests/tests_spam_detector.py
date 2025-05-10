@@ -1,38 +1,54 @@
-from unittest.mock import MagicMock, patch
-
 from django.contrib.auth.models import User
 from django.test import TestCase
 
 from zds.antispam.spam_detector import SpamDetector
 from zds.member.models import Profile
+from zds.utils.models import Alert
 
 
 class SpamDetectorTestCase(TestCase):
-    def setUp(self):
-        self.spam_detector = SpamDetector()
-        self.bot_user = User.objects.create_user(username="bot", password="password")
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.detector = SpamDetector()
+        # train the model for the content_type "PROFILE"
+        cls.detector.model_manager.train("PROFILE")
+        cls.antispam_user = User.objects.create_user(username="antispam", password="pwd")
 
-        self.user1 = User.objects.create_user(username="user_no_bio", password="password")
-        self.profile1 = Profile.objects.create(user=self.user1, biography="")
+        cls.user_clean = User.objects.create_user(username="clean_user", password="pwd")
+        cls.clean_profile = Profile.objects.create(user=cls.user_clean, biography="This is a legitimate message.")
 
-        self.user2 = User.objects.create_user(username="user_spam", password="password")
-        self.profile2 = Profile.objects.create(user=self.user2, biography="Buy cheap products now!")
+        cls.user_spam = User.objects.create_user(username="spam_user", password="pwd")
+        cls.spam_profile = Profile.objects.create(
+            user=cls.user_spam, biography="Buy cheap sunglasses now!!! Visit our website: bdeenseirb.com"
+        )
 
-        self.user3 = User.objects.create_user(username="user_clean", password="password")
-        self.profile3 = Profile.objects.create(user=self.user3, biography="I love programming and open-source.")
+    def test_check_empty_text(self):
+        self.assertFalse(self.detector.check_text("", "PROFILE"))
+        self.assertFalse(self.detector.check_text(None, "PROFILE"))
 
-    @patch("zds.antispam.spam_model_manager.SpamModelManager.predict", return_value=[0])
-    def test_check_profile_spam(self, mock_predict):
-        """Test that a spam profile triggers an alert."""
-        with patch.object(self.spam_detector, "send_alert") as mock_send_alert:
-            self.spam_detector.check_profile(self.profile2)
-            mock_predict.assert_called_once_with(["Buy cheap products now!"])
-            mock_send_alert.assert_called_once_with(None, self.user2.username)
+    def test_clean_biography(self):
+        """Test that legitimate text is not flagged as spam."""
 
-    @patch("zds.antispam.spam_model_manager.SpamModelManager.predict", return_value=[1])
-    def test_check_profile_clean(self, mock_predict):
-        """Test that a clean profile does not trigger an alert."""
-        with patch.object(self.spam_detector, "send_alert") as mock_send_alert:
-            self.spam_detector.check_profile(self.profile3)
-            mock_predict.assert_called_once_with(["I love programming and open-source."])
-            mock_send_alert.assert_not_called()
+        check = self.detector.check_text(self.clean_profile.biography, "PROFILE")
+        alert_count = Alert.objects.count()
+        if check:
+            self.detector.send_alert(self.clean_profile, "biography")
+        self.assertEqual(Alert.objects.count(), alert_count)
+
+    def test_spammy_biography(self):
+        """Test that spammy text is detected and alert is triggered."""
+        self.assertTrue(self.detector.check_text(self.spam_profile.biography, "PROFILE"))
+
+    def test_send_alert(self):
+        """Test that alerts are sent properly for spam_profile."""
+        alert_count = Alert.objects.count()
+        self.detector.send_alert(self.spam_profile, "biography")
+
+        self.assertEqual(Alert.objects.count(), alert_count + 1)
+
+        alert = Alert.objects.latest("pubdate")
+        self.assertEqual(alert.author.username, "antispam")
+        self.assertEqual(alert.scope, "PROFILE")
+        self.assertIn("biography", alert.text)
+        self.assertEqual(alert.profile, self.spam_profile)
