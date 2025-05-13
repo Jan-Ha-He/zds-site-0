@@ -59,9 +59,8 @@ class SpamModelManager:
         if 0 not in labels or 1 not in labels:
             self.logger.warning(
                 f"Data for {content_type} is unbalanced or empty. Using synthetic data for training. \n"
-                f"Data: {data} \n"
-                f"Labels: {labels}"
             )
+            self.logger.debug(f"Data: {data} \n" f"Labels: {labels}")
             data = [
                 "Spam: Buy cheap products now!",
                 "Spam: Click here for free money!",

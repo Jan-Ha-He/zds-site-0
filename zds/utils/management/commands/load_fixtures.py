@@ -38,7 +38,7 @@ def load_member(cli, size, fake, root, *_):
     Load members, including a portion as spam profiles.
     """
     nb_users = size * 20
-    spam_ratio = 0.2  # 20% of profiles will be spam
+    spam_ratio = 0.3  # 30% of profiles will be spam
     cli.stdout.write(f"Nombres de membres à créer : {nb_users} (dont {int(nb_users * spam_ratio)} spammeurs)")
     tps1 = time.time()
     cpt = 1
@@ -80,7 +80,7 @@ def load_member(cli, size, fake, root, *_):
         is_spam = random.random() < spam_ratio
         profile.can_read = 0 if is_spam else 1
         profile.site = fake.url()
-        profile.biography = "Spam: " + fake.text(max_nb_chars=100) if is_spam else fake.text(max_nb_chars=200)
+        profile.biography = "Spam: Gagner d'argent !" if is_spam else fake.text(max_nb_chars=200)
         profile.last_ip_address = fake.ipv4()
         profile.save()
 
@@ -306,9 +306,13 @@ def load_posts(cli, size, fake, *_, **__):
                 topic=topics[topic_index], author=profiles[post_index % nb_users].user, position=post_index + 1
             )
             if post_index % 10 == 0:
-                post.text = f"Spam: {fake.paragraph(nb_sentences=5, variable_nb_sentences=True)}"
+                post.text = f"Spam: Suivre le lien !"
+                post.is_visible = 0
+                post.editor = next((profile.user for profile in profiles if profile.user.username == "admin"), None)
             else:
                 post.text = fake.paragraph(nb_sentences=5, variable_nb_sentences=True)
+                post.is_visible = 1
+                post.editor = profiles[post_index % nb_users].user
             post.text_html = emarkdown(post.text)
             post.is_useful = int(nb_posts * 0.3) > 0 and post_index % int(nb_posts * 0.3) == 0
             post.save()
